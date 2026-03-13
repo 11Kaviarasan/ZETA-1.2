@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard — Zeta AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Sora:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cyan:#0CC8C8;--cyan-h:#09AEAE;--cyan-l:rgba(12,200,200,.08);--cyan-ll:rgba(12,200,200,.04);
+  --bg:#F3F6FA;--white:#fff;--text:#1C2030;--muted:#8A94A6;
+  --border:#E2EAF2;--shadow:0 2px 20px rgba(0,0,0,.07);
+  --gold:#F59E0B;--gold-l:#FFF8E7;--gold-b:#FDE68A;
+  --green:#22C55E;--green-l:#ECFDF5;--red:#EF4444;--red-l:#FEF2F2;
+  --sidebar:56px;
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+  --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
+body{display:flex;overflow:hidden}
+
+/* ── Page-load animation ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideRight{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes statusPulse{0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,.15)}50%{box-shadow:0 0 0 6px rgba(34,197,94,.06)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes thinkDot{0%,80%,100%{transform:scale(0);opacity:.4}40%{transform:scale(1);opacity:1}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(12,200,200,.15)}50%{box-shadow:0 0 40px rgba(12,200,200,.35)}}
+@keyframes orbFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-10px) rotate(180deg)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastSlide{from{opacity:0;transform:translateX(120%)}to{opacity:1;transform:translateX(0)}}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:var(--sidebar);background:var(--white);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;
+  padding:14px 0;gap:4px;flex-shrink:0;z-index:10;
+  animation:slideRight .5s var(--ease-out-expo) both;
+}
+.s-logo{
+  width:34px;height:34px;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-h));
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-family:'Sora',sans-serif;font-weight:700;color:#fff;font-size:14px;
+  margin-bottom:14px;text-decoration:none;
+  transition:transform .3s var(--ease-spring),box-shadow .3s;
+  box-shadow:0 4px 14px rgba(12,200,200,.3);
+}
+.s-logo:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(12,200,200,.45)}
+.s-btn{
+  width:36px;height:36px;border-radius:10px;border:none;background:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:#C2CDD8;transition:background .25s,color .25s,transform .2s var(--ease-spring);
+  text-decoration:none;position:relative;
+}
+.s-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.s-btn:hover,.s-btn.active{background:var(--cyan-l);color:var(--cyan);transform:scale(1.08)}
+.s-tip{
+  position:absolute;left:calc(100% + 12px);
+  background:#1C2030;color:#fff;font-size:11px;font-weight:500;
+  padding:5px 12px;border-radius:7px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+  transform:translateX(-4px);z-index:200;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+.s-tip::before{content:'';position:absolute;right:100%;top:50%;transform:translateY(-50%);border:5px solid transparent;border-right-color:#1C2030}
+.s-btn:hover .s-tip{opacity:1;transform:translateX(0)}
+.spacer{flex:1}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{
+  height:52px;border-bottom:1px solid var(--border);background:var(--white);
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;
+  flex-shrink:0;animation:slideDown .5s .1s var(--ease-out-expo) both;
+  backdrop-filter:blur(10px);
+}
+.tb-left{display:flex;align-items:center;gap:10px}
+.app-name{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;color:var(--text)}
+.plan-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px;transition:all .4s var(--ease-out-expo)}
+.badge-basic{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+.badge-pro{background:linear-gradient(135deg,var(--cyan-l),rgba(12,200,200,.15));color:var(--cyan);border:1px solid rgba(12,200,200,.3)}
+.tb-right{display:flex;align-items:center;gap:8px}
+.icon-btn{
+  width:32px;height:32px;border-radius:9px;border:1.5px solid var(--border);
+  background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  text-decoration:none;color:var(--muted);
+  transition:border-color .25s,background .25s,transform .2s var(--ease-spring),color .25s;
+}
+.icon-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn:hover{border-color:var(--cyan);background:var(--cyan-l);color:var(--cyan);transform:scale(1.08)}
+.avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-h));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;cursor:pointer;
+  transition:transform .3s var(--ease-spring),box-shadow .3s;
+  box-shadow:0 2px 8px rgba(12,200,200,.25);
+}
+.avatar:hover{transform:scale(1.12);box-shadow:0 4px 16px rgba(12,200,200,.4)}
+.welcome-text{font-size:13px;color:var(--muted);font-weight:300;animation:fadeIn .6s .3s both}
+
+/* ── Content ── */
+.content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* Hero */
+.hero-wrap{
+  display:flex;border-bottom:1px solid var(--border);flex-shrink:0;
+  background:var(--white);overflow:hidden;
+  animation:fadeUp .6s .15s var(--ease-out-expo) both;
+}
+.hero-left{flex:1;padding:40px;display:flex;flex-direction:column;justify-content:center}
+.powered-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  color:var(--cyan);font-size:11px;font-weight:600;margin-bottom:14px;
+  background:var(--cyan-l);padding:4px 12px;border-radius:20px;width:fit-content;
+  border:1px solid rgba(12,200,200,.2);
+  animation:scaleIn .5s .3s var(--ease-spring) both;
+}
+.powered-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:blink 2s infinite}
+.hero-left h1{font-family:'Sora',sans-serif;font-size:clamp(22px,2.5vw,30px);font-weight:700;line-height:1.2;margin-bottom:8px}
+.hero-left h1 em{font-style:normal;color:var(--cyan)}
+.hero-left p{font-size:14px;color:var(--muted);line-height:1.7;max-width:380px;margin-bottom:24px;font-weight:300}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn-main{
+  padding:10px 22px;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-h));
+  border:none;border-radius:10px;color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:7px;
+  transition:transform .25s var(--ease-spring),box-shadow .25s;
+  box-shadow:0 4px 16px rgba(12,200,200,.3);text-decoration:none;
+}
+.btn-main:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 8px 24px rgba(12,200,200,.45)}
+.btn-main:active{transform:translateY(0) scale(.98)}
+.btn-out{
+  padding:10px 22px;background:var(--white);border:1.5px solid var(--border);
+  border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:500;cursor:pointer;
+  transition:border-color .25s,transform .2s var(--ease-spring),box-shadow .2s;
+  text-decoration:none;display:flex;align-items:center;
+}
+.btn-out:hover{border-color:var(--cyan);transform:translateY(-2px);box-shadow:var(--shadow)}
+.hero-right{
+  width:280px;flex-shrink:0;
+  background:linear-gradient(150deg,#1C2C44,#0E1721);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.hero-right::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,rgba(12,200,200,.08) 0%,transparent 70%);
+}
+@keyframes portalRotate{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes portalRotateRev{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}
+@keyframes portalPulse{0%,100%{transform:scale(1);opacity:0.8;filter:brightness(1)}50%{transform:scale(1.05);opacity:1;filter:brightness(1.5)}}
+@keyframes coreGlow{0%,100%{box-shadow:0 0 30px rgba(12,200,200,0.4),inset 0 0 20px rgba(12,200,200,0.6)}50%{box-shadow:0 0 60px rgba(12,200,200,0.8),inset 0 0 40px rgba(12,200,200,0.9)}}
+
+.hero-right{
+  width:320px;flex-shrink:0;
+  background:linear-gradient(150deg,#0a0f18,#020508);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.hero-right::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at center, rgba(12,200,200,0.15) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+/* ── Complex Portal ── */
+.portal-container{
+  width:200px;height:200px;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  animation:portalPulse 4s ease-in-out infinite;
+}
+.portal-ring{
+  position:absolute;inset:0;border-radius:50%;
+  border:1px solid rgba(255,255,255,0.1);
+  background-image: radial-gradient(circle, transparent 50%, rgba(255,255,255,0.05) 100%);
+}
+.portal-ring.outer{
+  border: 1px dashed rgba(12,200,200,0.3);
+  animation: portalRotate 20s linear infinite;
+}
+.portal-ring.mid{
+  inset: 20px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-top-color: var(--cyan);
+  border-bottom-color: var(--cyan);
+  animation: portalRotateRev 15s linear infinite;
+}
+.portal-ring.inner{
+  inset: 40px;
+  border: 2px solid rgba(12,200,200,0.2);
+  border-left-color: #fff;
+  animation: portalRotate 10s linear infinite;
+}
+.portal-core{
+  width:60px;height:60px;background:#000;border-radius:50%;
+  position:relative;z-index:2;
+  border:2px solid rgba(12,200,200,0.5);
+  animation:coreGlow 3s ease-in-out infinite;
+}
+.portal-fractal{
+  position:absolute;inset:-20px;
+  background: conic-gradient(from 0deg, transparent, rgba(12,200,200,0.2), transparent, rgba(255,255,255,0.3), transparent);
+  border-radius:50%;filter:blur(10px);
+  animation: portalRotate 8s linear infinite;
+  mix-blend-mode: overlay;
+}
+
+/* ── Grid Layout ── */
+.dash-grid{display:grid;grid-template-columns:1fr 380px;gap:0;flex:1}
+.dash-main{border-right:1px solid var(--border);overflow-y:auto;padding:28px 32px;animation:fadeUp .6s .25s var(--ease-out-expo) both}
+.dash-side{overflow-y:auto;padding:28px 24px;background:var(--white);animation:fadeUp .6s .35s var(--ease-out-expo) both}
+
+/* Section */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;letter-spacing:.3px;text-transform:uppercase}
+.sec-title svg{width:14px;height:14px;stroke:var(--cyan);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sec-link{font-size:12px;color:var(--cyan);text-decoration:none;font-weight:500;transition:opacity .2s}
+.sec-link:hover{opacity:.7}
+
+/* Templates */
+.tmpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px}
+.tmpl-card{
+  background:var(--white);border:1.5px solid var(--border);border-radius:12px;
+  padding:16px;cursor:pointer;
+  transition:all .3s var(--ease-out-expo);
+  animation:fadeUp .5s var(--ease-out-expo) both;
+}
+.tmpl-card:nth-child(1){animation-delay:.1s}
+.tmpl-card:nth-child(2){animation-delay:.15s}
+.tmpl-card:nth-child(3){animation-delay:.2s}
+.tmpl-card:nth-child(4){animation-delay:.25s}
+.tmpl-card:nth-child(5){animation-delay:.3s}
+.tmpl-card:nth-child(6){animation-delay:.35s}
+.tmpl-card:hover{border-color:var(--cyan);transform:translateY(-3px);box-shadow:0 8px 24px rgba(12,200,200,.12)}
+.tmpl-card:active{transform:translateY(-1px)}
+.tmpl-icon{
+  width:32px;height:32px;border-radius:9px;background:var(--cyan-l);
+  display:flex;align-items:center;justify-content:center;margin-bottom:10px;
+  transition:transform .3s var(--ease-spring);
+}
+.tmpl-icon svg{width:15px;height:15px;stroke:var(--cyan);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tmpl-card:hover .tmpl-icon{transform:scale(1.15) rotate(-5deg)}
+.tmpl-card h4{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px}
+.tmpl-card p{font-size:11px;color:var(--muted);line-height:1.4;font-weight:300}
+
+/* Conversations */
+.conv-list{display:flex;flex-direction:column;gap:4px}
+.conv-item{
+  background:var(--white);border:1.5px solid var(--border);border-radius:11px;
+  padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;
+  transition:all .3s var(--ease-out-expo);text-decoration:none;
+  animation:fadeUp .5s var(--ease-out-expo) both;
+}
+.conv-item:hover{border-color:var(--cyan);box-shadow:0 4px 16px rgba(12,200,200,.1);transform:translateX(3px)}
+.conv-icon{
+  width:30px;height:30px;border-radius:8px;background:var(--cyan-l);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:transform .3s var(--ease-spring);
+}
+.conv-icon svg{width:13px;height:13px;stroke:var(--cyan);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.conv-item:hover .conv-icon{transform:scale(1.1)}
+.conv-info{flex:1;min-width:0}
+.conv-title{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.conv-sub{font-size:11px;color:var(--muted);font-weight:300}
+.conv-time{font-size:11px;color:var(--muted);flex-shrink:0}
+
+/* ── API Key Widget ── */
+.api-locked{
+  background:linear-gradient(135deg,#F8FAFF,#F0F4FF);
+  border:1.5px dashed var(--border);border-radius:16px;
+  padding:28px;text-align:center;margin-bottom:20px;
+  transition:all .3s;
+}
+.api-locked h3{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+.api-locked p{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:18px;font-weight:300}
+.api-locked .pricing-row{display:flex;gap:10px;justify-content:center;margin-bottom:18px}
+.price-pill{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center;min-width:100px;transition:all .25s}
+.price-pill:hover{border-color:var(--border);box-shadow:var(--shadow)}
+.price-pill .amt{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--text)}
+.price-pill .per{font-size:11px;color:var(--muted)}
+.price-pill.featured{border-color:var(--cyan);background:var(--cyan-ll)}
+.price-pill.featured .amt{color:var(--cyan)}
+.lock-graphic{width:48px;height:48px;background:linear-gradient(135deg,var(--cyan-l),rgba(12,200,200,.15));border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;transition:transform .3s var(--ease-spring)}
+.lock-graphic svg{width:22px;height:22px;stroke:var(--cyan);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.api-locked:hover .lock-graphic{transform:scale(1.1) rotate(-5deg)}
+.btn-upgrade{
+  width:100%;padding:12px;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-h));
+  border:none;border-radius:10px;color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:transform .25s var(--ease-spring),box-shadow .25s;
+  box-shadow:0 4px 16px rgba(12,200,200,.3);letter-spacing:.2px;
+}
+.btn-upgrade:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(12,200,200,.45)}
+.btn-upgrade:active{transform:translateY(0)}
+
+/* Active API key card */
+.api-active-card{
+  background:linear-gradient(135deg,rgba(12,200,200,.04),rgba(12,200,200,.01));
+  border:1.5px solid rgba(12,200,200,.2);border-radius:16px;
+  padding:24px;margin-bottom:20px;position:relative;overflow:hidden;
+  animation:glowPulse 3s ease-in-out infinite;
+}
+.api-active-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:radial-gradient(circle,rgba(12,200,200,.12),transparent 70%);border-radius:50%}
+.aak-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.aak-title{display:flex;align-items:center;gap:8px}
+.aak-title h3{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--text)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:statusPulse 2s infinite}
+.aak-label-badge{font-size:11px;font-weight:600;padding:3px 10px;background:var(--green-l);color:var(--green);border-radius:20px}
+
+/* Key display box */
+.key-box{background:#0E1421;border-radius:10px;padding:14px 16px;margin-bottom:14px;position:relative;display:flex;align-items:center;gap:10px}
+.key-text{font-family:'Fira Code',monospace;font-size:12px;color:#7DD3FC;flex:1;word-break:break-all;line-height:1.5;transition:color .3s}
+.key-actions{display:flex;gap:6px;flex-shrink:0}
+.ka-btn{width:30px;height:30px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:rgba(255,255,255,.05);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:rgba(255,255,255,.5);transition:all .2s}
+.ka-btn:hover{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);transform:scale(1.1)}
+
+/* Stats row */
+.key-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.kstat{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;text-align:center;transition:all .25s}
+.kstat:hover{border-color:var(--cyan);background:var(--cyan-l)}
+.kstat .val{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--text);margin-bottom:2px}
+.kstat .lbl{font-size:10px;color:var(--muted);letter-spacing:.3px;text-transform:uppercase}
+
+/* Key action buttons */
+.key-btn-row{display:flex;gap:8px}
+.kb-btn{flex:1;padding:9px;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .25s var(--ease-spring);display:flex;align-items:center;justify-content:center;gap:5px}
+.kb-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.kb-regen{background:var(--cyan-l);border:1.5px solid rgba(12,200,200,.3);color:var(--cyan)}
+.kb-regen:hover{background:rgba(12,200,200,.15);transform:translateY(-1px)}
+.kb-revoke{background:var(--red-l);border:1.5px solid rgba(239,68,68,.2);color:var(--red)}
+.kb-revoke:hover{background:rgba(239,68,68,.08);transform:translateY(-1px)}
+
+/* Code snippet */
+.usage-snippet{background:#0E1421;border-radius:10px;padding:14px 16px;margin-top:14px}
+.snippet-tabs{display:flex;gap:4px;margin-bottom:10px}
+.stab{padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.4);transition:all .25s;font-family:'DM Sans',sans-serif}
+.stab.active{background:rgba(12,200,200,.15);color:var(--cyan)}
+.stab:hover:not(.active){background:rgba(255,255,255,.05);color:rgba(255,255,255,.7)}
+.snippet-code{font-family:'Fira Code',monospace;font-size:11px;color:#94A3B8;line-height:1.7;overflow-x:auto;white-space:pre}
+.snippet-code .key-hl{color:#7DD3FC}
+.snippet-code .str-hl{color:#86EFAC}
+.snippet-code .kw-hl{color:#F0ABFC}
+.snippet-code .cmnt{color:#475569;font-style:italic}
+
+/* No key state */
+.no-key-state{text-align:center;padding:20px}
+.no-key-state p{font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:300;line-height:1.6}
+
+/* ── Input bar ── */
+.input-footer{border-top:1px solid var(--border);background:var(--white);padding:12px 32px 14px;flex-shrink:0;transition:box-shadow .3s}
+.input-footer:focus-within{box-shadow:0 -4px 24px rgba(12,200,200,.06)}
+.ready-lbl{text-align:center;font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;font-weight:500}
+.input-bar{
+  max-width:680px;margin:0 auto;
+  background:var(--bg);border:1.5px solid var(--border);
+  border-radius:13px;display:flex;align-items:center;
+  padding:8px 10px;gap:8px;
+  transition:border-color .3s,box-shadow .3s,background .3s;
+}
+.input-bar:focus-within{border-color:var(--cyan);box-shadow:0 0 0 4px rgba(12,200,200,.08);background:var(--white)}
+.input-bar input{flex:1;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;font-weight:300}
+.input-bar input::placeholder{color:#B8C2CC}
+.add-btn{
+  width:28px;height:28px;border:1.5px solid var(--border);border-radius:8px;
+  background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--muted);transition:all .25s var(--ease-spring);
+}
+.add-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.add-btn:hover{border-color:var(--cyan);color:var(--cyan);transform:scale(1.1)}
+.send-btn{
+  padding:7px 18px;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-h));
+  border:none;border-radius:9px;color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;transition:transform .25s var(--ease-spring),box-shadow .25s,opacity .2s;
+  display:flex;align-items:center;gap:6px;
+}
+.send-btn svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.send-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(12,200,200,.4)}
+.send-btn:hover svg{transform:translateX(2px)}
+.send-btn:active{transform:translateY(0)}
+
+/* ── Chat overlay ── */
+.chat-overlay{
+  position:fixed;inset:0 0 0 var(--sidebar);
+  background:var(--white);z-index:100;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .5s var(--ease-out-expo);
+}
+.chat-overlay.open{transform:translateY(0)}
+.chat-topbar{
+  height:52px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;flex-shrink:0;
+}
+.chat-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:700}
+.chat-close{
+  width:32px;height:32px;border-radius:9px;border:1.5px solid var(--border);
+  background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--muted);transition:all .25s var(--ease-spring);
+}
+.chat-close svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.chat-close:hover{border-color:var(--red);color:var(--red);transform:scale(1.08);background:var(--red-l)}
+.chat-msgs{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px}
+.chat-msgs::-webkit-scrollbar{width:4px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* Message bubbles */
+.msg{display:flex;gap:12px;animation:fadeUp .4s var(--ease-out-expo) both}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;margin-top:2px}
+.msg-avatar.ai{background:linear-gradient(135deg,var(--cyan),var(--cyan-h));box-shadow:0 2px 8px rgba(12,200,200,.3)}
+.msg-avatar.user-av{background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.msg-content{max-width:72%;display:flex;flex-direction:column;gap:4px}
+.msg.user .msg-content{align-items:flex-end}
+.msg-bubble{
+  padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.65;font-weight:300;
+  transition:box-shadow .2s;
+}
+.msg-bubble:hover{box-shadow:var(--shadow)}
+.ai .msg-bubble{
+  background:var(--bg);border:1.5px solid var(--border);
+  color:var(--text);border-radius:4px 16px 16px 16px;
+}
+.user .msg-bubble{
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-h));
+  color:#fff;border-radius:16px 4px 16px 16px;
+  box-shadow:0 4px 14px rgba(12,200,200,.25);
+}
+.msg-time{font-size:10px;color:var(--muted);padding:0 4px}
+
+/* Thinking indicator */
+.thinking{display:flex;gap:12px;align-items:flex-start;animation:fadeUp .4s var(--ease-out-expo) both}
+.think-bubble{
+  background:var(--bg);border:1.5px solid var(--border);
+  padding:12px 18px;border-radius:4px 16px 16px 16px;
+  display:flex;align-items:center;gap:6px;
+}
+.think-label{font-size:12px;color:var(--muted);font-weight:500;font-style:italic}
+.think-dots{display:flex;gap:4px;align-items:center}
+.think-dot{
+  width:5px;height:5px;border-radius:50%;background:var(--cyan);
+  animation:thinkDot 1.4s ease-in-out infinite;
+}
+.think-dot:nth-child(2){animation-delay:.2s}
+.think-dot:nth-child(3){animation-delay:.4s}
+.think-timer{font-size:11px;color:var(--cyan);font-family:'Fira Code',monospace;font-weight:500}
+
+/* Typing cursor */
+.typing-cursor{
+  display:inline-block;width:2px;height:1em;
+  background:var(--cyan);border-radius:1px;
+  vertical-align:text-bottom;margin-left:1px;
+  animation:blink 1s step-end infinite;
+}
+
+/* Chat input */
+.chat-input-wrap{border-top:1px solid var(--border);padding:14px 24px;flex-shrink:0;background:var(--white)}
+.chat-input-bar{
+  max-width:720px;margin:0 auto;
+  background:var(--bg);border:1.5px solid var(--border);
+  border-radius:13px;display:flex;align-items:center;
+  padding:8px 10px;gap:8px;
+  transition:border-color .3s,box-shadow .3s,background .3s;
+}
+.chat-input-bar:focus-within{border-color:var(--cyan);box-shadow:0 0 0 4px rgba(12,200,200,.08);background:var(--white)}
+.chat-input-bar input{flex:1;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;font-weight:300}
+.chat-input-bar input::placeholder{color:#B8C2CC}
+.chat-send{padding:7px 18px;background:linear-gradient(135deg,var(--cyan),var(--cyan-h));border:none;border-radius:9px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:transform .25s var(--ease-spring),box-shadow .25s;display:flex;align-items:center;gap:6px}
+.chat-send svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.chat-send:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(12,200,200,.4)}
+.chat-send:hover svg{transform:translateX(2px)}
+
+/* ── Upgrade modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(28,32,48,.45);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;animation:fadeIn .25s ease both}
+.modal-bg.hidden{display:none}
+.modal{background:var(--white);border-radius:22px;width:460px;max-width:94vw;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.18);animation:scaleIn .35s var(--ease-spring) both}
+.modal-head{background:linear-gradient(135deg,var(--cyan),var(--cyan-h));padding:28px 28px 24px;color:#fff;position:relative;overflow:hidden}
+.modal-head::before{content:'';position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:rgba(255,255,255,.08);border-radius:50%}
+.modal-head::after{content:'';position:absolute;bottom:-30px;left:20px;width:80px;height:80px;background:rgba(255,255,255,.05);border-radius:50%}
+.modal-head h2{font-family:'Sora',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px}
+.modal-head p{font-size:13px;opacity:.85;font-weight:300}
+.modal-body{padding:24px 28px}
+.cycle-toggle{display:flex;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:3px;margin-bottom:20px}
+.ct-opt{flex:1;padding:8px;text-align:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .3s var(--ease-out-expo);position:relative}
+.ct-opt.active{background:var(--white);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.save-badge{position:absolute;top:-8px;right:8px;background:var(--green);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px}
+.price-display{text-align:center;margin-bottom:22px;padding:20px;background:var(--cyan-ll);border-radius:14px;border:1px solid rgba(12,200,200,.2)}
+.price-amount{font-family:'Sora',sans-serif;font-size:40px;font-weight:700;color:var(--text);line-height:1}
+.price-amount sup{font-size:18px;vertical-align:top;margin-top:6px;color:var(--muted)}
+.price-period{font-size:13px;color:var(--muted);margin-top:4px}
+.price-saving{display:inline-block;background:var(--green-l);color:var(--green);font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;margin-top:6px}
+.features-list{margin-bottom:22px}
+.feat{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)}
+.feat:last-child{border-bottom:none}
+.feat-check{width:16px;height:16px;border-radius:50%;background:var(--green-l);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.feat-check svg{width:9px;height:9px;stroke:var(--green);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.feat strong{color:var(--cyan)}
+.pay-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#0CC8C8,#09AEAE);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .25s var(--ease-spring),box-shadow .25s;box-shadow:0 6px 20px rgba(12,200,200,.35);margin-bottom:10px}
+.pay-btn:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(12,200,200,.5)}
+.pay-btn:active{transform:translateY(0)}
+.pay-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.pay-secure{text-align:center;font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
+.modal-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);border:none;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s var(--ease-spring)}
+.modal-close svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.modal-close:hover{background:rgba(255,255,255,.35);transform:scale(1.1)}
+
+/* New key modal */
+.new-key-modal{background:var(--white);border-radius:22px;width:500px;max-width:94vw;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.18);animation:scaleIn .35s var(--ease-spring) both;padding:28px}
+.nk-icon{width:52px;height:52px;background:linear-gradient(135deg,var(--cyan-l),rgba(12,200,200,.2));border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.nk-icon svg{width:24px;height:24px;stroke:var(--cyan);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nk-key-box{background:#0E1421;border-radius:12px;padding:16px;margin:16px 0;position:relative}
+.nk-key-text{font-family:'Fira Code',monospace;font-size:12px;color:#7DD3FC;word-break:break-all;line-height:1.6;padding-right:60px}
+.nk-copy-btn{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.1);border:none;border-radius:7px;padding:5px 10px;color:rgba(255,255,255,.7);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.nk-copy-btn:hover{background:rgba(255,255,255,.2);color:#fff}
+.warn-box{background:var(--gold-l);border:1px solid var(--gold-b);border-radius:10px;padding:10px 14px;font-size:12px;color:#92400E;display:flex;align-items:flex-start;gap:8px;margin-bottom:18px}
+.warn-icon{flex-shrink:0}
+.warn-icon svg{width:14px;height:14px;stroke:#92400E;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-top:1px}
+
+/* Account overview */
+.overview-card{background:var(--bg);border-radius:12px;padding:16px;margin-top:4px}
+.ov-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0}
+.ov-label{color:var(--muted)}
+.ov-val{font-weight:600;color:var(--text)}
+
+/* ── Toast ── */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:600;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{
+  background:var(--white);border-radius:12px;padding:12px 18px;
+  display:flex;align-items:center;gap:10px;font-size:13px;
+  box-shadow:0 8px 32px rgba(0,0,0,.14);border-left:3px solid var(--cyan);
+  pointer-events:auto;animation:toastSlide .4s var(--ease-out-expo) both;
+  max-width:320px;font-weight:400;
+}
+.toast.success{border-left-color:var(--green)}
+.toast.error{border-left-color:var(--red)}
+.toast.warning{border-left-color:var(--gold)}
+.toast-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.toast.success .toast-dot{background:var(--green)}
+.toast.error .toast-dot{background:var(--red)}
+.toast.warning .toast-dot{background:var(--gold)}
+.toast:not(.success):not(.error):not(.warning) .toast-dot{background:var(--cyan)}
+.toast-exit{animation:toastSlide .3s var(--ease-out-expo) reverse both}
+
+/* Login/Signup Modal */
+.auth-modal-bg{position:fixed;inset:0;background:rgba(240,248,255,.95);backdrop-filter:blur(20px);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn .4s ease}
+.auth-modal-bg.hidden{display:none}
+.auth-split{display:flex;width:860px;max-width:96vw;min-height:500px;border-radius:24px;overflow:hidden;box-shadow:0 32px 100px rgba(0,0,0,.15);animation:scaleIn .5s var(--ease-spring) both}
+.auth-left{background:linear-gradient(150deg,#0E1F35,#0A3040);flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:52px;position:relative;overflow:hidden}
+.auth-left::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(12,200,200,.15),transparent 70%);border-radius:50%}
+.auth-left::after{content:'';position:absolute;bottom:-30px;left:-20px;width:150px;height:150px;background:radial-gradient(circle,rgba(12,200,200,.08),transparent 70%);border-radius:50%}
+.auth-tagline{font-family:'Sora',sans-serif;font-size:clamp(24px,3vw,34px);font-weight:700;color:#fff;line-height:1.2;margin-bottom:12px}
+.auth-tagline span{color:var(--cyan)}
+.auth-desc{font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;font-weight:300;max-width:280px}
+.auth-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(12,200,200,.1);border:1px solid rgba(12,200,200,.2);border-radius:20px;padding:5px 14px;margin-bottom:20px;color:var(--cyan);font-size:12px;font-weight:600}
+.auth-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:blink 2s infinite}
+.auth-right{background:var(--white);width:380px;flex-shrink:0;padding:48px 40px;display:flex;flex-direction:column;justify-content:center}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.auth-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--cyan),var(--cyan-h));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:700;color:#fff;font-size:16px;box-shadow:0 4px 14px rgba(12,200,200,.3)}
+.auth-logo-text{font-family:'Sora',sans-serif;font-weight:700;font-size:18px}
+.auth-right h2{font-family:'Sora',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px}
+.auth-right .sub{font-size:13px;color:var(--muted);margin-bottom:24px;font-weight:300}
+.auth-social{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.social-btn{
+  width:100%;padding:10px 16px;border:1.5px solid var(--border);border-radius:10px;
+  background:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  color:var(--text);transition:all .25s var(--ease-spring);
+}
+.social-btn:hover{border-color:var(--text);transform:translateY(-1px);box-shadow:var(--shadow)}
+.social-btn img{width:16px;height:16px}
+.divider{display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;display:block;letter-spacing:.2px}
+.form-input{
+  width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);
+  background:var(--bg);outline:none;
+  transition:border-color .25s,box-shadow .25s,background .25s;
+}
+.form-input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(12,200,200,.1);background:var(--white)}
+.form-input::placeholder{color:#B8C2CC;font-weight:300}
+.auth-btn{
+  width:100%;padding:12px;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-h));
+  border:none;border-radius:10px;color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .25s var(--ease-spring),box-shadow .25s;
+  box-shadow:0 4px 16px rgba(12,200,200,.3);margin-bottom:16px;
+}
+.auth-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(12,200,200,.45)}
+.auth-btn:active{transform:translateY(0)}
+.auth-toggle{text-align:center;font-size:13px;color:var(--muted)}
+.auth-toggle a{color:var(--cyan);text-decoration:none;font-weight:600;cursor:pointer;transition:opacity .2s}
+.auth-toggle a:hover{opacity:.7}
+.form-row{display:flex;gap:10px}
+.form-row .form-group{flex:1}
+.remember-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.remember-row input[type=checkbox]{accent-color:var(--cyan);width:14px;height:14px}
+.remember-row label{font-size:12px;color:var(--muted);cursor:pointer}
+.forgot{font-size:12px;color:var(--cyan);text-decoration:none;font-weight:500;transition:opacity .2s}
+.forgot:hover{opacity:.7}
+</style>
+</head>
+<body>
+<script src="https://checkout.razorpay.com/v1/checkout.js" onerror="void(0)"></script>
+
+<!-- Auth Modal -->
+<div class="auth-modal-bg" id="authModal">
+  <div class="auth-split">
+    <div class="auth-left">
+      <div class="auth-badge">Powered by Zeta-4 Turbo</div>
+      <div class="auth-tagline">The future of <span>intelligence</span> is fluid.</div>
+      <p class="auth-desc">Zeta AI brings a calm, intuitive approach to artificial intelligence. Start your most productive conversations today.</p>
+    </div>
+    <div class="auth-right">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">Z</div>
+        <span class="auth-logo-text">Zeta AI</span>
+        <div class="nav-item" onclick="openBackendModal()" title="Link Backend">
+          <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px"><rect x="2" y="2" width="20" height="12" rx="2"/><line x1="6" y1="14" x2="6" y2="14"/><line x1="18" y1="14" x2="18" y2="14"/></svg>
+        </div>
+      </div>
+      <!-- Login Form -->
+      <div id="loginForm">
+        <h2>Welcome back</h2>
+        <p class="sub">Please enter your details to sign in.</p>
+        <div class="auth-social">
+          <button class="social-btn" onclick="socialLogin('Google')">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+          </button>
+          <button class="social-btn" onclick="socialLogin('Apple')">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.14-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04l-.04.22zM13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Continue with Apple
+          </button>
+        </div>
+        <div class="divider">or continue with email</div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" type="email" id="loginEmail" placeholder="name@company.com" autocomplete="email">
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <label class="form-label" style="margin-bottom:0">Password</label>
+          <a class="forgot" href="#">Forgot password?</a>
+        </div>
+        <div class="form-group">
+          <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div class="remember-row">
+          <input type="checkbox" id="rememberMe">
+          <label for="rememberMe">Remember me for 30 days</label>
+        </div>
+        <button class="auth-btn" onclick="doLogin()">
+          Sign in to Zeta
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <div class="auth-toggle">Don't have an account? <a onclick="switchToSignup()">Create account</a></div>
+      </div>
+      <!-- Signup Form -->
+      <div id="signupForm" style="display:none">
+        <h2>Create account</h2>
+        <p class="sub">Join thousands of professionals using Zeta AI.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-input" type="text" id="signupFirst" placeholder="Felix" autocomplete="given-name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-input" type="text" id="signupLast" placeholder="Vanguard" autocomplete="family-name">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" type="email" id="signupEmail" placeholder="name@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" id="signupPassword" placeholder="Create a strong password" autocomplete="new-password">
+        </div>
+        <button class="auth-btn" onclick="doSignup()">
+          Create Account
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <div class="auth-toggle">Already have an account? <a onclick="switchToLogin()">Sign in</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <a href="#" class="s-logo">Z</a>
+  <button class="s-btn active" onclick="openChat()">
+    <span class="s-tip">New Chat</span>
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <a href="#history" class="s-btn">
+    <span class="s-tip">History</span>
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+  </a>
+  <a href="#templates" class="s-btn">
+    <span class="s-tip">Templates</span>
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+  </a>
+  <a href="#api" class="s-btn">
+    <span class="s-tip">API Keys</span>
+    <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+  </a>
+  <div class="spacer"></div>
+  <a href="#" class="s-btn" onclick="showSettings()">
+    <span class="s-tip">Settings</span>
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </a>
+  <a href="#" class="s-btn" onclick="doLogout()" style="color:var(--red)">
+    <span class="s-tip">Logout</span>
+    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  </a>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-left">
+      <span class="app-name">Zeta AI</span>
+      <span class="plan-badge badge-basic" id="planBadge">Basic</span>
+    </div>
+    <div class="tb-right">
+      <span class="welcome-text" id="welcomeText"></span>
+      <a href="#" class="icon-btn" title="Settings" onclick="showSettings()">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+      <div class="avatar" id="avatarEl" onclick="showSettings()"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Hero -->
+    <div class="hero-wrap">
+      <div class="hero-left">
+        <div class="powered-badge">Powered by Zeta-4 Turbo</div>
+        <h1>Welcome to <em>Zeta AI</em><span id="heroUser"></span>.</h1>
+        <p>Your intelligent creative partner. Start a new conversation or use a template to get things moving.</p>
+        <div class="hero-btns">
+          <button class="btn-main" onclick="openChat()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            New Chat
+          </button>
+          <a href="#history" class="btn-out">View History</a>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="portal-container">
+          <div class="portal-fractal"></div>
+          <div class="portal-ring outer"></div>
+          <div class="portal-ring mid"></div>
+          <div class="portal-ring inner"></div>
+          <div class="portal-core"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dash Grid -->
+    <div class="dash-grid">
+      <!-- Left -->
+      <div class="dash-main">
+        <div class="sec-hdr" id="history">
+          <div class="sec-title">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Recent Conversations
+          </div>
+          <a href="#" class="sec-link">Manage history</a>
+        </div>
+        <div class="conv-list" id="convList">
+          <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Right: API Panel -->
+      <div class="dash-side" id="api">
+        <div class="sec-title" style="margin-bottom:16px">
+          <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          API Access
+        </div>
+
+        <div class="api-locked" id="apiLocked">
+          <div class="lock-graphic">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3>API Key — Pro Feature</h3>
+          <p>Integrate Zeta AI into your own apps, scripts, and workflows. One secure key per account.</p>
+          <div class="pricing-row">
+            <div class="price-pill"><div class="amt">₹189</div><div class="per">/month</div></div>
+            <div class="price-pill featured"><div class="amt">₹1,899</div><div class="per">/year · Save ₹369</div></div>
+          </div>
+          <button class="btn-upgrade" onclick="openUpgradeModal()">Upgrade to Pro</button>
+        </div>
+
+        <div id="apiActive" style="display:none">
+          <div class="api-active-card" id="noKeyCard" style="display:none">
+            <div class="aak-header"><div class="aak-title"><span class="aak-label-badge">Pro Active</span></div></div>
+            <div class="no-key-state">
+              <div style="width:52px;height:52px;background:var(--cyan-l);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              </div>
+              <p>No API key generated yet.<br>Generate your key to start integrating Zeta AI.</p>
+              <button class="btn-main" onclick="generateKey()" style="width:100%;justify-content:center">Generate API Key</button>
+            </div>
+          </div>
+
+          <div class="api-active-card" id="hasKeyCard" style="display:none">
+            <div class="aak-header">
+              <div class="aak-title"><span class="status-dot"></span><h3 id="keyLabel">Default Key</h3></div>
+              <span class="aak-label-badge">Active</span>
+            </div>
+            <div class="key-box">
+              <div class="key-text" id="keyDisplay">zeta_live_••••••••••••••••••••••••</div>
+              <div class="key-actions">
+                <button class="ka-btn" title="Copy" onclick="copyKey()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <button class="ka-btn" title="Toggle reveal" onclick="toggleReveal()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="key-stats">
+              <div class="kstat"><div class="val" id="statToday">0</div><div class="lbl">Today</div></div>
+              <div class="kstat"><div class="val" id="statTotal">0</div><div class="lbl">Total</div></div>
+              <div class="kstat"><div class="val" id="statCreated">—</div><div class="lbl">Created</div></div>
+            </div>
+            <div class="key-btn-row">
+              <button class="kb-btn kb-regen" onclick="regenKey()">
+                <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Regenerate
+              </button>
+              <button class="kb-btn kb-revoke" onclick="revokeKey()">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Revoke
+              </button>
+            </div>
+            <div class="usage-snippet" id="snippetBox">
+              <div class="snippet-tabs">
+                <div class="stab active" onclick="showSnippet('curl',this)">cURL</div>
+                <div class="stab" onclick="showSnippet('python',this)">Python</div>
+                <div class="stab" onclick="showSnippet('js',this)">JavaScript</div>
+              </div>
+              <div class="snippet-code" id="snippetCode"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-card">
+          <div class="sec-title" style="font-size:11px;margin-bottom:12px">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Account Overview
+          </div>
+          <div class="ov-row"><span class="ov-label">Plan</span><span class="ov-val" id="ovPlan">Basic</span></div>
+          <div class="ov-row"><span class="ov-label">API Key</span><span class="ov-val" id="ovKey" style="color:var(--muted)">Not available</span></div>
+          <div class="ov-row"><span class="ov-label">Conversations</span><span class="ov-val" id="ovConvs">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input footer -->
+  <div class="input-footer">
+    <div class="ready-lbl">Ready to chat? Just click "New Chat" above</div>
+    <div class="input-bar">
+      <button class="add-btn" onclick="openChat()">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <input type="text" id="quickInput" placeholder="Type a message or try a template..." onkeydown="if(event.key==='Enter')quickChat()">
+      <button class="send-btn" onclick="quickChat()">
+        Send
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Chat Overlay ── -->
+<div class="chat-overlay" id="chatOverlay">
+  <div class="chat-topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--cyan);animation:statusPulse 2s infinite"></div>
+      <span class="chat-title">Zeta AI</span>
+      <span style="font-size:11px;color:var(--muted);font-weight:300">Zeta-4 Turbo</span>
+    </div>
+    <button class="chat-close" onclick="closeChat()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="chat-input-wrap">
+    <div class="chat-input-bar">
+      <input type="text" id="chatInput" placeholder="Ask Zeta anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}">
+      <button class="chat-send" onclick="sendChatMessage()">
+        Send
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Upgrade Modal -->
+<div class="modal-bg hidden" id="upgradeModal">
+  <div class="modal">
+    <div class="modal-head">
+      <button class="modal-close" onclick="closeUpgradeModal()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h2>Upgrade to Pro</h2>
+      <p>Unlock API access, all models, and priority support.</p>
+    </div>
+    <div class="modal-body">
+      <div class="cycle-toggle">
+        <div class="ct-opt active" id="ct-monthly" onclick="setCycle('monthly')">Monthly</div>
+        <div class="ct-opt" id="ct-yearly" onclick="setCycle('yearly')">Yearly <span class="save-badge">Save 16%</span></div>
+      </div>
+      <div class="price-display">
+        <div class="price-amount"><sup>₹</sup><span id="modalPrice">189</span></div>
+        <div class="price-period" id="modalPeriod">per month · billed monthly</div>
+        <div class="price-saving" id="modalSaving" style="display:none">You save ₹369/year</div>
+      </div>
+      <div class="features-list">
+        <div class="feat"><span class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>One <strong>API key</strong> — integrate anywhere</div>
+        <div class="feat"><span class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>All Zeta models including <strong>Zeta Pro Ultra</strong></div>
+        <div class="feat"><span class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Semantic FAISS cache + ML ensemble</div>
+        <div class="feat"><span class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Usage analytics and request tracking</div>
+        <div class="feat"><span class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>End-to-end encrypted storage</div>
+        <div class="feat"><span class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Priority API responses, no rate limits</div>
+      </div>
+      <button class="pay-btn" id="payBtn" onclick="initiatePayment()">
+        <span id="payBtnText">Pay with Razorpay</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <div class="pay-secure">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Secured by Razorpay · UPI, Cards, Netbanking
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Key Modal -->
+<div class="modal-bg hidden" id="newKeyModal">
+  <div class="new-key-modal">
+    <div class="nk-icon">
+      <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+    </div>
+    <h3 style="font-family:'Sora',sans-serif;font-size:18px;font-weight:700;text-align:center;margin-bottom:6px">Your API Key</h3>
+    <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:4px;font-weight:300">Your key has been generated successfully.</p>
+    <div class="nk-key-box">
+      <div class="nk-key-text" id="newKeyText"></div>
+      <button class="nk-copy-btn" onclick="copyNewKey()">Copy</button>
+    </div>
+    <div class="warn-box">
+      <span class="warn-icon">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </span>
+      <span><strong>Store this key now.</strong> For security, the full key is only shown once. You can regenerate it any time from this dashboard.</span>
+    </div>
+    <button class="btn-main" onclick="closeNewKeyModal()" style="width:100%;justify-content:center">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      I've saved my key
+    </button>
+  </div>
+</div>
+
+<script>
+// ── Configuration ──────────────────────────────
+const API_BASE_URL = localStorage.getItem('ZETA_API_URL') || ''; // e.g. 'http://150.230.133.117:5000'
+
+// ── Auth & Session ─────────────────────────────
+const Session = {
+  get: () => { try { return JSON.parse(localStorage.getItem('zeta_session') || 'null'); } catch { return null; } },
+  set: (d) => localStorage.setItem('zeta_session', JSON.stringify(d)),
+  save: (user, token) => Session.set({ user, token }),
+  clear: () => localStorage.removeItem('zeta_session'),
+  user: () => Session.get()?.user || null,
+  token: () => Session.get()?.token || null,
+};
+
+async function apiFetch(endpoint, options = {}) {
+  const token = Session.token();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'X-Session-Token': token } : {}),
+    ...(options.headers || {})
+  };
+  return fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+}
+
+// ── Toast ────────────────────────────────────
+const Toast = {
+  show(msg, type='info') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<div class="toast-dot"></div><span>${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(() => {
+      t.classList.add('toast-exit');
+      setTimeout(() => t.remove(), 300);
+    }, 3500);
+  },
+  success(m){ this.show(m,'success') },
+  error(m){ this.show(m,'error') },
+  warning(m){ this.show(m,'warning') },
+  info(m){ this.show(m) }
+};
+
+// ── Auth ─────────────────────────────────────
+let currentUser = null;
+let isPro = false;
+let cycle = 'monthly';
+let keyData = null;
+let maskedKey = '';
+let revealed = false;
+
+function socialLogin(provider) {
+  Toast.info(`${provider} login is not yet configured for production.`);
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  if (!email || !pass) { Toast.error('Please fill in all fields.'); return; }
+  
+  try {
+    const res = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      Session.save(data.user, data.session_token);
+      performLogin(data.user);
+      Toast.success(`Welcome back, ${data.user.firstName || data.user.username}!`);
+    } else {
+      Toast.error(data.error || 'Login failed');
+    }
+  } catch (e) {
+    Toast.error('Connection error. Is the server running?');
+  }
+}
+
+async function doSignup() {
+  const first = document.getElementById('signupFirst').value.trim();
+  const last = document.getElementById('signupLast').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const pass = document.getElementById('signupPassword').value;
+  if (!first || !email || !pass) { Toast.error('Please fill in all required fields.'); return; }
+  
+  try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+              email, 
+              username: `${first}${last ? ' '+last : ''}`, 
+              password: pass 
+          })
+      });
+      const data = await res.json();
+      if (data.status === 'ok') {
+          Toast.success('Account created! Please sign in.');
+          switchToLogin();
+      } else {
+          Toast.error(data.error || 'Registration failed');
+      }
+  } catch (e) {
+      Toast.error('Connection error during registration.');
+  }
+}
+
+function performLogin(userData) {
+  // userData now saved in doLogin via Session.save
+  currentUser = userData;
+  isPro = userData.plan === 'pro';
+  
+  // Animate modal out
+  const modal = document.getElementById('authModal');
+  modal.style.transition = 'opacity .4s ease, transform .4s cubic-bezier(0.16,1,0.3,1)';
+  modal.style.opacity = '0';
+  modal.style.transform = 'scale(1.04)';
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    initDashboard();
+  }, 400);
+}
+
+function switchToSignup() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('signupForm').style.display = 'block';
+}
+
+function switchToLogin() {
+  document.getElementById('signupForm').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'block';
+}
+
+// ── Init ─────────────────────────────────────
+async function initDashboard() {
+  const user = Session.user();
+  if (!user) {
+    document.getElementById('authModal').classList.remove('hidden');
+    document.getElementById('authModal').style.display = 'flex';
+    return;
+  }
+  
+  try {
+    const res = await apiFetch('/api/auth/me');
+    const data = await res.json();
+    if (data.status === 'ok') {
+      currentUser = data.user;
+      isPro = data.user.plan === 'pro';
+      Session.set({ user: data.user, token: Session.token() });
+    }
+  } catch (e) {
+    console.warn("Could not sync user data", e);
+  }
+
+  currentUser = Session.user();
+  isPro = currentUser.plan === 'pro';
+  document.getElementById('authModal').classList.add('hidden');
+  document.getElementById('authModal').style.display = 'none';
+
+  // Update avatar
+  const initials = (currentUser.username || 'Z').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('avatarEl').textContent = initials;
+  
+  // Update welcome text
+  const firstName = currentUser.firstName || currentUser.username.split(' ')[0];
+  document.getElementById('welcomeText').textContent = `Good ${getGreeting()}, ${firstName}`;
+  
+  // Update hero
+  document.getElementById('heroUser').textContent = `, ${firstName}`;
+
+  updatePlanUI();
+  await loadConversations();
+  if (isPro) await fetchApiKey();
+  updateOverview();
+}
+
+function doLogout() {
+  apiFetch('/api/auth/logout', { method: 'POST' }).finally(() => {
+    Session.clear();
+    location.reload();
+  });
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
+
+function updatePlanUI() {
+  const badge = document.getElementById('planBadge');
+  if (isPro) {
+    badge.textContent = 'Pro';
+    badge.className = 'plan-badge badge-pro';
+  } else {
+    badge.textContent = 'Basic';
+    badge.className = 'plan-badge badge-basic';
+  }
+  document.getElementById('apiLocked').style.display = isPro ? 'none' : 'block';
+  document.getElementById('apiActive').style.display = isPro ? 'block' : 'none';
+}
+
+// ── Chat ─────────────────────────────────────
+let chatMessages = [];
+let isThinking = false;
+let currentConvId = null;
+
+async function openChat(initialMsg = '') {
+  const overlay = document.getElementById('chatOverlay');
+  overlay.classList.add('open');
+  setTimeout(() => document.getElementById('chatInput').focus(), 300);
+  
+  if (!currentConvId && currentUser) {
+    try {
+      const res = await apiFetch('/api/conversations', {
+        method: 'POST',
+        body: JSON.stringify({ title: initialMsg ? initialMsg.substring(0, 30) : 'New Conversation' })
+      });
+      const data = await res.json();
+      if (data.status === 'ok') currentConvId = data.conv_id;
+    } catch (e) { console.warn("Could not create conversation", e); }
+  }
+
+  if (initialMsg) {
+    document.getElementById('chatInput').value = initialMsg;
+    sendChatMessage();
+  }
+  
+  if (chatMessages.length === 0) {
+    const name = currentUser ? (currentUser.firstName || currentUser.username.split(' ')[0]) : 'there';
+    addAiMessage(`Hi ${name}! I'm Zeta AI, your intelligent creative partner. How can I help you today?`);
+  }
+}
+
+function closeChat() {
+  document.getElementById('chatOverlay').classList.remove('open');
+  currentConvId = null; // Reset context when closed
+  chatMessages = [];
+  document.getElementById('chatMsgs').innerHTML = '';
+  loadConversations(); // Refresh sidebar
+}
+
+function addUserMessage(text) {
+  const msgs = document.getElementById('chatMsgs');
+  const user = currentUser;
+  const initials = user ? (user.username||'U').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() : 'U';
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `
+    <div class="msg-avatar user-av">${initials}</div>
+    <div class="msg-content">
+      <div class="msg-bubble">${escapeHTML(text)}</div>
+      <span class="msg-time">${now}</span>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  chatMessages.push({role:'user', content: text});
+}
+
+function showThinking() {
+  const msgs = document.getElementById('chatMsgs');
+  const div = document.createElement('div');
+  div.className = 'thinking';
+  div.id = 'thinkingIndicator';
+  
+  let seconds = 0;
+  div.innerHTML = `
+    <div class="msg-avatar ai">Z</div>
+    <div class="think-bubble">
+      <span class="think-label">Thinking</span>
+      <div class="think-dots">
+        <div class="think-dot"></div>
+        <div class="think-dot"></div>
+        <div class="think-dot"></div>
+      </div>
+      <span class="think-timer" id="thinkTimer">0.0s</span>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  
+  const start = Date.now();
+  const timer = setInterval(() => {
+    const el = document.getElementById('thinkTimer');
+    if (el) el.textContent = ((Date.now()-start)/1000).toFixed(1)+'s';
+    else clearInterval(timer);
+  }, 100);
+  div._timer = timer;
+  return div;
+}
+
+function removeThinking() {
+  const el = document.getElementById('thinkingIndicator');
+  if (el) {
+    if (el._timer) clearInterval(el._timer);
+    el.style.transition = 'opacity .3s, transform .3s';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-8px)';
+    setTimeout(() => el.remove(), 300);
+  }
+}
+
+function addAiMessage(text, animate = true) {
+  const msgs = document.getElementById('chatMsgs');
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `
+    <div class="msg-avatar ai">Z</div>
+    <div class="msg-content">
+      <div class="msg-bubble" id="aiBubble_${Date.now()}"><span class="typing-cursor"></span></div>
+      <span class="msg-time">${now}</span>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  
+  const bubble = div.querySelector('.msg-bubble');
+  chatMessages.push({role:'assistant', content: text});
+  
+  if (animate) {
+    typeText(bubble, text, () => msgs.scrollTop = msgs.scrollHeight);
+  } else {
+    bubble.textContent = text;
+  }
+  return bubble;
+}
+
+function typeText(el, text, onScroll) {
+  // Simulate token-by-token streaming like ChatGPT
+  const words = text.split(' ');
+  let i = 0;
+  el.innerHTML = '<span class="typing-cursor"></span>';
+  
+  function addChunk() {
+    if (i >= words.length) {
+      // Remove cursor
+      const cursor = el.querySelector('.typing-cursor');
+      if (cursor) {
+        cursor.style.transition = 'opacity .3s';
+        cursor.style.opacity = '0';
+        setTimeout(() => cursor.remove(), 300);
+      }
+      return;
+    }
+    const cursor = el.querySelector('.typing-cursor');
+    const chunkSize = Math.ceil(Math.random() * 3 + 1);
+    const chunk = words.slice(i, i + chunkSize).join(' ');
+    if (cursor) {
+      cursor.insertAdjacentText('beforebegin', (i === 0 ? '' : ' ') + chunk);
+    } else {
+      el.textContent += (i === 0 ? '' : ' ') + chunk;
+    }
+    i += chunkSize;
+    if (onScroll) onScroll();
+    // Variable speed like real streaming
+    const delay = 30 + Math.random() * 40;
+    setTimeout(addChunk, delay);
+  }
+  addChunk();
+}
+
+const AI_RESPONSES = [
+  "I've analyzed your request carefully. Here's a comprehensive breakdown: The key insight here is that we need to consider multiple dimensions of this problem. First, there's the immediate context, which suggests a practical approach. Second, the longer-term implications point toward a more strategic solution. I'd recommend starting with the fundamentals and building incrementally from there.",
+  "That's a great question! Let me think through this systematically. Based on my analysis, there are three main approaches you could take: The direct path offers speed but may sacrifice some flexibility. The iterative approach balances quality and adaptability. The comprehensive solution takes more time upfront but yields the most robust results. My recommendation is the iterative approach for most use cases.",
+  "Excellent point. Here's what I found when I analyzed this deeply: The core challenge you're facing is a classic tension between efficiency and thoroughness. The most successful practitioners in this domain tend to prioritize a hybrid strategy — moving fast in the early stages, then slowing down for careful validation before finalizing.",
+  "I can help with that! After careful consideration, here's my detailed response: The framework you're looking for combines three elements. Clarity of intent comes first — being precise about what you're trying to achieve. Structured execution follows, breaking complex tasks into manageable steps. Finally, iterative refinement ensures you're continuously improving based on feedback.",
+  "Great request! Here's a thoughtful analysis: The pattern you're describing is well-documented and has established solutions. The most effective approach involves understanding the underlying principles before applying tactical fixes. This ensures that your solution is not just correct for this instance but generalizable to similar challenges you might encounter."
+];
+
+async function sendChatMessage() {
+  if (isThinking) return;
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  input.value = '';
+  isThinking = true;
+  addUserMessage(text);
+  
+  const thinkEl = showThinking();
+  
+  try {
+    const res = await apiFetch('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        question: text,
+        conv_id: currentConvId
+      })
+    });
+    const data = await res.json();
+    removeThinking();
+    
+    if (data.status === 'ok') {
+      addAiMessage(data.reply || data.answer, true);
+    } else {
+      addAiMessage("Error: " + (data.error || "Failed to get response"), true);
+    }
+  } catch (e) {
+    removeThinking();
+    addAiMessage("Connection error. Is the backend running?", true);
+  } finally {
+    isThinking = false;
+  }
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function quickChat() {
+  const q = document.getElementById('quickInput').value.trim();
+  if (!q) return;
+  document.getElementById('quickInput').value = '';
+  openChat(q);
+}
+
+// ── Templates ────────────────────────────────
+const TEMPLATES = [
+  { title:'Summarise PDF', desc:'Extract key insights and action items from any document.', prompt:'Please summarise this document: ',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' },
+  { title:'Refactor Code', desc:'Optimise your functions for better readability and performance.',  prompt:'Please refactor this code:\n\n',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' },
+  { title:'Brainstorm Ideas', desc:'Generate 10 creative angles for your next marketing campaign.',  prompt:'Brainstorm 10 ideas for: ',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>' },
+  { title:'Write Email', desc:'Craft a compelling, professional message that gets results.',  prompt:'Write a professional email about: ',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>' },
+  { title:'Analyse Data', desc:'Interpret metrics, spot trends, and surface key insights.',  prompt:'Analyse this data:\n\n',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' },
+  { title:'Research Topic', desc:'Deep-dive into any subject with structured, sourced insights.',  prompt:'Give me a comprehensive overview of: ',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' },
+];
+
+function renderTemplates() {
+  document.getElementById('tmplGrid').innerHTML = TEMPLATES.map((t,i) => `
+    <div class="tmpl-card" onclick="useTemplate(${JSON.stringify(t.prompt)})" style="animation-delay:${.1+i*.05}s">
+      <div class="tmpl-icon">${t.icon}</div>
+      <h4>${t.title}</h4><p>${t.desc}</p>
+    </div>`).join('');
+}
+
+function useTemplate(p) {
+  document.getElementById('quickInput').value = p;
+  document.getElementById('quickInput').focus();
+}
+
+// ── Conversations ─────────────────────────────
+async function loadConversations() {
+  const list = document.getElementById('convList');
+  try {
+    const res = await apiFetch('/api/conversations');
+    const data = await res.json();
+    if (data.status === 'ok') {
+      const convs = data.conversations || [];
+      if (convs.length === 0) {
+        list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No conversations yet.</div>`;
+      } else {
+        list.innerHTML = convs.map((c, i) => `
+          <a href="#" class="conv-item" onclick="openConv(event,'${c.conv_id}')" style="animation-delay:${.1 + i * 0.08}s">
+            <div class="conv-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="conv-info">
+              <div class="conv-title">${escapeHTML(c.title)}</div>
+              <div class="conv-sub">${c.model}</div>
+            </div>
+            <div class="conv-time">${new Date(c.created_at).toLocaleDateString()}</div>
+          </a>`).join('');
+      }
+      document.getElementById('ovConvs').textContent = convs.length;
+    }
+  } catch (e) {
+    list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">Failed to load history.</div>`;
+  }
+}
+
+async function openConv(e, id) {
+  if (e) e.preventDefault();
+  currentConvId = id;
+  const msgs = document.getElementById('chatMsgs');
+  msgs.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Loading messages...</div>';
+  openChat();
+  
+  try {
+    const res = await apiFetch(`/api/conversations/${id}/messages`);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      msgs.innerHTML = '';
+      chatMessages = [];
+      data.messages.forEach(m => {
+        if (m.role === 'user') addUserMessage(m.content);
+        else addAiMessage(m.content, false);
+      });
+    }
+  } catch (e) {
+    msgs.innerHTML = '<div style="text-align:center;padding:20px;color:var(--red)">Failed to load messages.</div>';
+  }
+}
+
+function updateOverview() {
+  document.getElementById('ovPlan').textContent = isPro ? 'Pro' : 'Basic (Free)';
+  document.getElementById('ovPlan').style.color = isPro ? 'var(--cyan)' : 'var(--text)';
+  if (!isPro) document.getElementById('ovKey').textContent = 'Upgrade to unlock';
+}
+
+// ── API Key Logic ─────────────────────────────
+async function fetchApiKey() {
+  try {
+    const res = await apiFetch('/api/keys');
+    const data = await res.json();
+    if (data.status === 'ok' && data.key) {
+      keyData = { ...data.key, key_prefix: 'zeta_live_' }; // Prefix for display logic
+      renderKeyCard();
+    }
+  } catch (e) {
+    console.warn("Failed to fetch API key", e);
+  }
+}
+
+async function generateKey() {
+  try {
+    const res = await apiFetch('/api/keys/generate', {
+      method: 'POST',
+      body: JSON.stringify({ label: 'Default Key' })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      keyData = data.key;
+      showNewKeyModal(data.key.key);
+      renderKeyCard();
+    } else {
+      if (data.code === 'PRO_REQUIRED') openUpgradeModal();
+      else Toast.error(data.error || 'Failed to generate key');
+    }
+  } catch (e) {
+    Toast.error('Connection error.');
+  }
+}
+
+function showNewKeyModal(apiKey) {
+  document.getElementById('newKeyText').textContent = apiKey;
+  document.getElementById('newKeyModal').classList.remove('hidden');
+}
+
+function closeNewKeyModal() {
+  document.getElementById('newKeyModal').classList.add('hidden');
+}
+
+function copyNewKey() {
+  navigator.clipboard.writeText(document.getElementById('newKeyText').textContent).then(() => {
+    document.querySelector('.nk-copy-btn').textContent = 'Copied!';
+    Toast.success('API key copied to clipboard!');
+    setTimeout(() => document.querySelector('.nk-copy-btn').textContent = 'Copy', 2000);
+  });
+}
+
+function copyKey() {
+  const text = document.getElementById('keyDisplay').textContent;
+  if (text.includes('●')) { Toast.warning('Reveal the key first, then copy.'); return; }
+  navigator.clipboard.writeText(text).then(() => Toast.success('API key copied!'));
+}
+
+async function regenKey() {
+  if (!confirm('Regenerate your API key? The old key will be immediately revoked.')) return;
+  await generateKey();
+}
+
+async function revokeKey() {
+  if (!confirm('Revoke this API key? It will stop working immediately.')) return;
+  try {
+    const res = await apiFetch('/api/keys/revoke', { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      keyData = null;
+      renderKeyCard();
+      Toast.success('Key revoked.');
+    }
+  } catch (e) {
+    Toast.error('Revocation failed.');
+  }
+}
+
+// ── Code Snippets ─────────────────────────────
+const SNIPPETS = {
+  curl: (k) => `<span class="cmnt"># Zeta AI API — cURL Example</span>
+curl -X POST https://api.zeta.ai/v1/chat \\
+  -H <span class="str-hl">"X-Zeta-API-Key: <span class="key-hl">${k}</span>"</span> \\
+  -H <span class="str-hl">"Content-Type: application/json"</span> \\
+  -d <span class="str-hl">'{"question": "Explain neural networks"}'</span>`,
+  python: (k) => `<span class="kw-hl">import</span> requests
+<span class="cmnt"># Zeta AI API — Python</span>
+response = requests.post(
+    <span class="str-hl">"https://api.zeta.ai/v1/chat"</span>,
+    headers={<span class="str-hl">"X-Zeta-API-Key"</span>: <span class="str-hl">"<span class="key-hl">${k}</span>"</span>},
+    json={<span class="str-hl">"question"</span>: <span class="str-hl">"Explain neural networks"</span>}
+)
+print(response.json()[<span class="str-hl">"answer"</span>])`,
+  js: (k) => `<span class="cmnt">// Zeta AI API — JavaScript</span>
+<span class="kw-hl">const</span> res = <span class="kw-hl">await</span> fetch(<span class="str-hl">"https://api.zeta.ai/v1/chat"</span>, {
+  method: <span class="str-hl">"POST"</span>,
+  headers: { <span class="str-hl">"X-Zeta-API-Key"</span>: <span class="str-hl">"<span class="key-hl">${k}</span>"</span> },
+  body: JSON.stringify({ question: <span class="str-hl">"Explain neural networks"</span> })
+});
+<span class="kw-hl">const</span> { answer } = <span class="kw-hl">await</span> res.json();`,
+};
+
+function showSnippet(lang, tabEl) {
+  document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  const k = keyData?.api_key || 'YOUR_API_KEY';
+  document.getElementById('snippetCode').innerHTML = SNIPPETS[lang](k);
+}
+
+// ── Upgrade Modal ─────────────────────────────
+function openUpgradeModal() {
+  setCycle('monthly');
+  document.getElementById('upgradeModal').classList.remove('hidden');
+}
+function closeUpgradeModal() {
+  document.getElementById('upgradeModal').classList.add('hidden');
+}
+document.getElementById('upgradeModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('upgradeModal')) closeUpgradeModal();
+});
+
+function setCycle(c) {
+  cycle = c;
+  document.getElementById('ct-monthly').classList.toggle('active', c==='monthly');
+  document.getElementById('ct-yearly').classList.toggle('active', c==='yearly');
+  document.getElementById('modalPrice').textContent = c==='monthly' ? '189' : '1,899';
+  document.getElementById('modalPeriod').textContent = c==='monthly' ? 'per month · billed monthly' : 'per year · billed annually';
+  document.getElementById('modalSaving').style.display = c==='yearly' ? 'inline-block' : 'none';
+}
+
+async function initiatePayment() {
+  const payBtn = document.getElementById('payBtn');
+  payBtn.disabled = true;
+  payBtn.textContent = 'Processing...';
+
+  try {
+    const res = await apiFetch('/api/payments/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ plan: 'pro', billing_cycle: cycle })
+    });
+    const orderData = await res.json();
+    
+    if (orderData.status !== 'ok') {
+      Toast.error(orderData.error || 'Payment failed to initiate');
+      return;
+    }
+
+    const options = {
+      key: orderData.razorpay_key_id,
+      amount: orderData.amount,
+      currency: "INR",
+      name: "Zeta AI",
+      description: `Upgrade to Zeta ${cycle.capitalize()}`,
+      order_id: orderData.order_id,
+      handler: async function (response) {
+        try {
+          const verifyRes = await apiFetch('/api/payments/verify', {
+            method: 'POST',
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              plan: 'pro',
+              billing_cycle: cycle
+            })
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyData.status === 'ok') {
+            isPro = true;
+            currentUser.plan = 'pro';
+            Session.set({ user: currentUser, token: Session.token() });
+            closeUpgradeModal();
+            Toast.success('Welcome to Zeta Pro!');
+            updatePlanUI();
+            updateOverview();
+            await fetchApiKey();
+          } else {
+            Toast.error(verifyData.error || 'Payment verification failed');
+          }
+        } catch (e) {
+          Toast.error('Verification error.');
+        }
+      },
+      prefill: {
+        name: currentUser.username,
+        email: currentUser.email
+      },
+      theme: { color: "#0CC8C8" }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+  } catch (e) {
+    Toast.error('Payment system unreachable.');
+  } finally {
+    payBtn.disabled = false;
+    payBtn.textContent = 'Pay with Razorpay';
+  }
+}
+
+String.prototype.capitalize = function() {
+  return this.charAt(0).toUpperCase() + this.slice(1);
+}
+
+function showSettings() {
+  Toast.info('Settings panel coming soon.');
+}
+
+// ── Utils ─────────────────────────────────────
+function escapeHTML(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function startApp() {
+  if (!API_BASE_URL && !localStorage.getItem('ZETA_API_URL')) {
+    Toast.warning("Backend not linked. Click the server icon to set your API URL.");
+  }
+  initDashboard();
+}
+
+function openBackendModal() {
+  const url = prompt("Enter your Backend API URL (e.g. http://150.230.133.117:5000):", API_BASE_URL);
+  if (url !== null) {
+    localStorage.setItem('ZETA_API_URL', url.replace(/\/$/, ''));
+    window.location.reload();
+  }
+}
+
+// ── Start ─────────────────────────────────────
+startApp();
+</script>
+</body>
+</html>
