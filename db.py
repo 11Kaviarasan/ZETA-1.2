@@ -6,6 +6,7 @@ Replaces Oracle DB. All collections live in the 'zetaai' database.
 import os, secrets, hashlib, logging
 from datetime import datetime, timedelta, timezone
 from functools import wraps
+from typing import Optional
 
 import bcrypt
 from pymongo import MongoClient, ASCENDING, DESCENDING
@@ -18,7 +19,7 @@ logger = logging.getLogger("zeta.db")
 _MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 _DB_NAME   = os.getenv("MONGO_DB",  "zetaai")
 
-_client: MongoClient | None = None
+_client: Optional[MongoClient] = None
 _db = None
 
 def _get_db():
@@ -80,14 +81,14 @@ def create_user(email: str, username: str, password: str) -> dict:
     except DuplicateKeyError:
         raise ValueError("Email or username already taken.")
 
-def authenticate_user(email: str, password: str) -> dict | None:
+def authenticate_user(email: str, password: str) -> Optional[dict]:
     db = _get_db()
     doc = db.users.find_one({"email": email.lower()})
     if not doc or not _check_password(password, doc["password_hash"]):
         return None
     return _fmt_user(doc)
 
-def get_user_by_id(user_id: str) -> dict | None:
+def get_user_by_id(user_id: str) -> Optional[dict]:
     from bson import ObjectId
     db = _get_db()
     try:
@@ -105,7 +106,7 @@ def create_session(user_id: str) -> str:
     db.sessions.insert_one({"token": tok, "user_id": user_id, "expires_at": exp})
     return tok
 
-def validate_session(token: str) -> str | None:
+def validate_session(token: str) -> Optional[str]:
     db  = _get_db()
     doc = db.sessions.find_one({"token": token})
     if not doc:
@@ -255,7 +256,7 @@ def generate_api_key(user_id: str, label: str = "Default Key") -> dict:
 def revoke_api_key(user_id: str):
     _get_db().api_keys.update_one({"user_id": user_id}, {"$set": {"revoked": True}})
 
-def validate_api_key(raw_key: str) -> dict | None:
+def validate_api_key(raw_key: str) -> Optional[dict]:
     key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
     db  = _get_db()
     doc = db.api_keys.find_one({"key_hash": key_hash, "revoked": False})
@@ -264,7 +265,7 @@ def validate_api_key(raw_key: str) -> dict | None:
     db.api_keys.update_one({"_id": doc["_id"]}, {"$set": {"last_used": datetime.now(timezone.utc)}})
     return {"user_id": doc["user_id"]}
 
-def get_api_key_info(user_id: str) -> dict | None:
+def get_api_key_info(user_id: str) -> Optional[dict]:
     doc = _get_db().api_keys.find_one({"user_id": user_id, "revoked": False})
     if not doc:
         return None
