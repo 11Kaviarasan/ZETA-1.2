@@ -6,6 +6,7 @@ Vectors stored in Pinecone. Embeddings via sentence-transformers.
 
 import os, re, logging, time
 from datetime import datetime
+from typing import Optional
 
 logger = logging.getLogger("zeta.engine")
 
@@ -127,7 +128,7 @@ class ProperAI:
 
     # ── Embedding ─────────────────────────────────────────────────────────────
 
-    def _embed(self, text: str) -> list[float] | None:
+    def _embed(self, text: str) -> Optional[list[float]]:
         if not self._embedder:
             return None
         try:
@@ -180,7 +181,7 @@ class ProperAI:
 
     # ── Conversational layer ──────────────────────────────────────────────────
 
-    def _check_small_talk(self, text: str) -> str | None:
+    def _check_small_talk(self, text: str) -> Optional[str]:
         low = text.lower().strip()
         for pattern, reply in _GREETINGS.items():
             if re.search(pattern, low):
@@ -189,7 +190,7 @@ class ProperAI:
 
     # ── Gemini ────────────────────────────────────────────────────────────────
 
-    def _ask_gemini(self, question: str, context: str = "", history: list = []) -> str | None:
+    def _ask_gemini(self, question: str, context: str = "", history: list = []) -> Optional[str]:
         if not self._gemini:
             return None
         try:
@@ -213,7 +214,7 @@ class ProperAI:
 
     # ── OpenAI ────────────────────────────────────────────────────────────────
 
-    def _ask_openai(self, question: str, context: str = "", history: list = []) -> str | None:
+    def _ask_openai(self, question: str, context: str = "", history: list = []) -> Optional[str]:
         if not self._openai:
             return None
         try:
@@ -236,7 +237,7 @@ class ProperAI:
 
     # ── LiveBrain (Wikipedia) ─────────────────────────────────────────────────
 
-    def _livebrain(self, question: str) -> str | None:
+    def _livebrain(self, question: str) -> Optional[str]:
         if not _wiki_ok:
             return None
         try:
